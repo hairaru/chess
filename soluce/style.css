@@ -1,0 +1,66 @@
+#fond {
+	position: absolute;
+	z-index: 1;
+	height: 600px;
+}
+
+#timer {
+	position: absolute;
+	z-index: 1;
+	top: 568px;
+	left: 400px;
+}
+
+#info {
+	position: absolute;
+	z-index: 1;
+	top: 568px;
+	left: 20px;
+	font-size: 20px;
+	font: bold, arial;
+}
+
+#changePawn {
+	position: absolute;
+	z-index: 10;
+	border: 2px solid;
+    border-radius: 5px;
+    visibility: hidden;
+	background-color: LightGray;
+}
+
+#back {
+	position: absolute;
+	z-index: 5;
+	top: 610px;
+}
+
+#saveInput {
+	position: absolute;
+	z-index: 5;
+	top: 640px;
+}
+
+#saveButton {
+	position: absolute;
+	z-index: 5;
+	top: 640px;
+	left: 200px;
+}
+
+#loadInput {
+	position: absolute;
+	z-index: 5;
+	top: 670px;
+}
+
+#loadButton {
+	position: absolute;
+	z-index: 5;
+	top: 670px;
+	left: 200px;
+}
+
+body {
+	background-image:url(resBis/background.jpg);
+}

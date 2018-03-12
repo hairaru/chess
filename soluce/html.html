@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>TD3</title>
+	<link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body id="body">
+
+	<img id="fond" src="res/fond.png">
+	<p id="timer"> </p>
+	<p id="info"> </p>
+
+	<div id="changePawn"> 
+		<img id="queen" src="resBis/white_queen.png">
+		<img id="bishop" src="resBis/white_bishop.png">
+		<img id="horse" src="resBis/white_horse.png">
+		<img id="tower" src="resBis/white_tower.png">
+	</div>
+	<button id="back">Retour</button>
+	<input type="text" id="saveInput" value="" placeholder="Nom de la partie">
+	<button id="saveButton" onclick="saveGame()">Save</button>
+
+	<input type="text" id="loadInput" value="">
+	<button id="loadButton" onclick="load()">Load</button>
+
+</body>
+<script type="text/javascript" src="js.js"></script>
+</html>
