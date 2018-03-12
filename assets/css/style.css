@@ -16,6 +16,10 @@ body {
   border: 3px solid #797979;
 }
 
+#text {
+  color: white;
+}
+
 .field {
   width: 50px;
   height: 50px;
