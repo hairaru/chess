@@ -93,6 +93,87 @@ function movePiece(oldCase, newCase){
     }
 }
 
-function checkMove(idpiece, id){
-    return true;
+function checkMove(oldCase, newCase){
+    var piece = findPieceByPosition(oldCase.charAt(1), oldCase.charAt(0));
+    if(piece === null)
+        return false;
+    var res = false;
+    if(piece.key.charAt(1) === "t")
+        res = checkMoveTower(piece, newCase);
+    else if(piece.key.charAt(1) === "p")
+        res = checkMovePawn(piece, newCase);
+    else if(piece.key.charAt(1) === "c")
+        res = checkMoveCav(piece, newCase);
+    else if(piece.key.charAt(1) === "f")
+        res = checkMoveFou(piece, newCase);
+    else if(piece.key.charAt(1) === "q")
+        res = checkMoveQueen(piece, newCase);
+    else if(piece.key.charAt(1) === "k")
+        res = checkMoveKing(piece, newCase);
+    return res;
+}
+
+//Vérifie si le pion en question peut se déplacer sur la newCase
+function checkMovePawn(piece, newCase){
+    var avant1 = null;
+    var avant2 = null;
+    if(piece.key.charAt(0)==="n"){
+        //Les cases avants
+        if(validCase(piece.x, String.fromCharCode(piece.y.charCodeAt(0)+1)) 
+         && findPieceByPosition(piece.x, String.fromCharCode(piece.y.charCodeAt(0)+1)) === null)
+            avant1 = String.fromCharCode(piece.y.charCodeAt(0)+1) + piece.x;
+        if(validCase(piece.x, String.fromCharCode(piece.y.charCodeAt(0)+2)) 
+         && findPieceByPosition(piece.x, String.fromCharCode(piece.y.charCodeAt(0)+2)) === null)
+            avant2 = String.fromCharCode(piece.y.charCodeAt(0)+2) + piece.x;
+        //Les cases latérales
+        
+    } else {
+        //Les cases avants
+        if(validCase(piece.x, String.fromCharCode(piece.y.charCodeAt(0)-1)) 
+         && findPieceByPosition(piece.x, String.fromCharCode(piece.y.charCodeAt(0)-1)) === null)
+            avant1 = String.fromCharCode(piece.y.charCodeAt(0)-1) + piece.x;
+        if(validCase(piece.x, String.fromCharCode(piece.y.charCodeAt(0)-2)) 
+         && findPieceByPosition(piece.x, String.fromCharCode(piece.y.charCodeAt(0)-2)) === null)
+            avant2 = String.fromCharCode(piece.y.charCodeAt(0)-2) + piece.x;
+        //Les cases latérales
+    }
+}
+
+//Vérifie si la tour en question peut se déplacer sur la newCase
+function checkMoveTower(piece, newCase){
+    
+}
+
+//Vérifie si le cavalier en question peut se déplacer sur la newCase
+function checkMoveCav(piece, newCase){
+    
+}
+
+//Vérifie si le fou en question peut se déplacer sur la newCase
+function checkMoveFou(piece, newCase){
+    
+}
+
+//Vérifie si la reine en question peut se déplacer sur la newCase
+function checkMoveQueen(piece, newCase){
+    
+}
+
+//Vérifie si le roi en question peut se déplacer sur la newCase
+function checkMoveKing(piece, newCase){
+    
+}
+
+//Renvoie, si elle existe, la pièce sur la case dont l'ID est en paramètre, sinon renvoie null
+function findPieceByPosition(x, y){
+    var piece = null;
+    noirs.forEach(function(element){if(element.y===y && element.x===x) piece = element});
+    if(piece === null) blancs.forEach(function(element){if(element.y===y && element.x===x) piece = element});
+    return piece;
+}
+
+//Vérifie si les coordonnées rentrées sont valides
+function validCase(x, y){
+    //Y va de a à h donc de 97 à 104 selon les CharacCodes
+    return x>=1 && x<=8 && y.charCodeAt(0)>=97 && y.charCodeAt(0)<=104;
 }
