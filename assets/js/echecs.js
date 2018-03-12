@@ -37,9 +37,14 @@ function init(){
     
     //Ajout des listeners sur les pièces
     document.addEventListener("dragstart", function(event){
-        dragPiece(event);
-        event.dataTransfer.setData('foo', event.target);
-        console.log(event.target);
+        console.log(event);
+        if(event.target.classList.contains('piece')){
+            console.log(event.target.src);
+            var img = new Image();
+            img.src = event.target.src;
+            event.dataTransfer.setDragImage(img, 40, 40);
+            event.dataTransfer.setData('text/plain', event.target.parentElement.id);
+        }
     }, false);
     //Ajout des listeners sur les cases
     var cases = Array.from(document.getElementsByClassName("field"));
@@ -63,7 +68,7 @@ function init(){
                 event.stopPropagation();
             }
             element.style.opacity = 1; 
-            movePiece(event.dataTransfer.getData('text/html'), element);
+            movePiece(event.dataTransfer.getData('text/plain'), element);
         });
     });
 }
@@ -78,27 +83,16 @@ function displayPiece(piece){
             '<img draggable="true" class="piece" src="./assets/images/' + piece.key + '.png" id="' + piece.y+piece.x + 'P"></img>';
 }
 
-function dragPiece(event){
-    console.log(event);
-    if(event.target.classList.contains('piece')){
-        console.log(event.target.src);
-        var img = new Image();
-        img.src = event.target.src;
-        event.dataTransfer.setDragImage(img, 40, 40); 
-         event.dataTransfer.setData('text/plain', '');
+function movePiece(oldCase, newCase){
+    if(checkMove(oldCase, newCase)){
+        var piece = document.getElementById(oldCase+"P");
+        piece.id = newCase.id+"P";
+        newCase.appendChild(piece);
+    } else{
+        //Some error code
     }
 }
 
-function movePiece(piece, Case){
-    console.log(piece);
-    Case.appendChild(piece);
-}
-
-function playPiece(event){
-    event.target.classList.remove('dragged');
-}
-
-function receivePiece(event){
-    event.preventDefault();
-    alert("lol");
+function checkMove(idpiece, id){
+    return true;
 }
