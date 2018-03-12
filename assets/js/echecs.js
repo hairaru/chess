@@ -36,25 +36,34 @@ function init(){
     refreshDisplay();
     
     //Ajout des listeners sur les pièces
-    document.addEventListener("dragstart", function(event){dragPiece(event)}, false);
+    document.addEventListener("dragstart", function(event){
+        dragPiece(event);
+        event.dataTransfer.setData('foo', event.target);
+        console.log(event.target);
+    }, false);
     //Ajout des listeners sur les cases
     var cases = Array.from(document.getElementsByClassName("field"));
     cases.forEach(function(element){
-        element.addEventListener('drop', function(event){
-            console.log('mdr');
-            if (event.stopPropagation) {
-                event.stopPropagation();
-            }
-        });
+        //Gère la zone de drop en générale
         element.addEventListener('dragover', function(event){
             event.preventDefault();
         });
+        //Gère l'entrée en zone de drop
         element.addEventListener('dragenter', function() {
             element.style.opacity = 0.5;
         });
-
+        //Gère la sortie de la zone de drop
         element.addEventListener('dragleave', function() {
             element.style.opacity = 1;
+        });
+        //Gère la fin du drop
+        element.addEventListener('drop', function(event){
+            event.preventDefault();
+            if (event.stopPropagation) {
+                event.stopPropagation();
+            }
+            element.style.opacity = 1; 
+            movePiece(event.dataTransfer.getData('text/html'), element);
         });
     });
 }
@@ -80,13 +89,9 @@ function dragPiece(event){
     }
 }
 
-function movePiece(event){
-    var pieces = Array.from(document.getElementsByClassName("dragged"));
-    if(pieces.length === 1){
-        //pieces[0].style.position = "absolute";
-        //pieces[0].style.left = event.clientX + 'px';
-        //pieces[0].style.top = event.clientY + 'px';
-    }
+function movePiece(piece, Case){
+    console.log(piece);
+    Case.appendChild(piece);
 }
 
 function playPiece(event){
