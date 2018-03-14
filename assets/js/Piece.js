@@ -6,8 +6,9 @@
 //Un piece est définie par une valeur clef sous la forme :
 //n ou b (selon la couleur du joueur) et p, t, c, f, k, q (selon son type)
 //ex : nk ou bp
-function Piece(key, x, y){
-    this.key = key;
+function Piece(color, type, x, y){
+    this.color = color;
+    this.type = type;
     this.x = x;
     this.y = y;
 }
