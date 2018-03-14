@@ -81,6 +81,9 @@ function displayPiece(piece){
 
 function movePiece(oldCase, newCase){ //Les ids des cases sont en paramètre
     if(checkMove(oldCase, newCase)){
+        var enemyPiece = findPieceByPosition(newCase.charAt(1), newCase.charAt(0));
+        if(enemyPiece !== null)
+            eatEnemy(enemyPiece);
         //On modifie l'objet piece
         var piece = findPieceByPosition(oldCase.charAt(1), oldCase.charAt(0));
         piece.x = newCase.charAt(1); piece.y = newCase.charAt(0);
@@ -260,4 +263,11 @@ function getEnemy(piece){
     else
         enemy = "b";
     return enemy;
+}
+
+function eatEnemy(pieceToEat){
+    var piece = document.getElementById(pieceToEat.y + pieceToEat.x + "P");
+    var stack = document.getElementById("stack"+pieceToEat.color);
+    stack.appendChild(piece);
+    piece.classList.remove("piece");
 }
