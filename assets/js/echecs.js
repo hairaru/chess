@@ -1,10 +1,13 @@
 /* 
 
  */
+var plateau;
+var turn;
+
 function init(){
     //Initialiser le tableau
-    plateau = [];
     //Pions
+    plateau = []
     for(var i = 1; i <= 8; i++){
         plateau.push(new Piece("b","p", i, "G"));
         plateau.push(new Piece("n","p", i, "B"));
@@ -65,9 +68,14 @@ function init(){
                 event.stopPropagation();
             }
             element.style.opacity = 1; 
-            movePiece(event.dataTransfer.getData('text/plain'), element.id);
+            var old = event.dataTransfer.getData('text/plain');
+            movePiece(old.charAt(1), old.charAt(0), element.id.charAt(1), element.id.charAt(0));
         });
     });
+    
+    //Initialisation du système de tours
+    turn = new Turn();
+    document.getElementById("whiteTurnDisplay").style.display = "inline";
 }
 
 function refreshDisplay(){
@@ -79,46 +87,60 @@ function displayPiece(piece){
         '<img draggable="true" class="piece" src="./assets/images/' + piece.color + piece.type + '.png" id="' + piece.y+piece.x + 'P"></img>';
 }
 
-function movePiece(oldCase, newCase){ //Les ids des cases sont en paramètre
-    if(checkMove(oldCase, newCase)){
-        var enemyPiece = findPieceByPosition(newCase.charAt(1), newCase.charAt(0));
+function movePiece(oldX, oldY, newX, newY){ //Les ids des cases sont en paramètre
+    //On vérifie que ce soit le tour de la bonne personne, que le mouvement est valide et que la case soit vide ou avec un ennemi
+    //On vérifie également que personne n'est mat
+    var piece = findPieceByPosition(oldX, oldY, plateau);
+    if(turn.echec !== 4 && piece.color === turn.color && checkMove(oldX, oldY, newX, newY, plateau)){
+        //Si l'ennemi existe, on le mange
+        var enemyPiece = findPieceByPosition(newX, newY, plateau);
         if(enemyPiece !== null)
             eatEnemy(enemyPiece);
         //On modifie l'objet piece
-        var piece = findPieceByPosition(oldCase.charAt(1), oldCase.charAt(0));
-        piece.x = newCase.charAt(1); piece.y = newCase.charAt(0);
+        piece.x = parseInt(newX); piece.y = newY;
         //On déplace l'image
-        var pieceImg = document.getElementById(oldCase+"P");
-        var newPos = document.getElementById(newCase);
-        pieceImg.id = newCase+"P";
+        var pieceImg = document.getElementById(oldY+oldX+"P");
+        var newPos = document.getElementById(newY+newX);
+        pieceImg.id = newY+newX+"P";
         newPos.appendChild(pieceImg);
+        //On passe au tour suivant
+        passTurn();
     } else{
         //Some error code
     }
 }
 
-function checkMove(oldCase, newCase){
-    var piece = findPieceByPosition(oldCase.charAt(1), oldCase.charAt(0));
-    if(piece === null)
-        return false;
-    var pos = [];
-    if(piece.type === "t")
-        pos = checkMoveTower(piece, newCase);
-    else if(piece.type === "p")
-        pos = checkMovePawn(piece, newCase);
-    else if(piece.type === "c")
-        pos = checkMoveCav(piece, newCase);
-    else if(piece.type === "f")
-        pos = checkMoveFou(piece, newCase);
-    else if(piece.type === "q")
-        pos = checkMoveQueen(piece, newCase);
-    else if(piece.type === "k")
-        pos = checkMoveKing(piece, newCase);
-    return pos.includes(newCase);
+//Vérifie si l'on peut bouger la pièce se trouvant en oldX oldY en newX newY
+function checkMove(oldX, oldY, newX, newY, plateau){
+    var pos = getPossiblePositions(oldX, oldY, plateau);
+    return pos.includes(newY+newX) && !kingWillBeInDanger(oldX, oldY, newX, newY);
 }
 
-//Vérifie si le pion en question peut se déplacer sur la newCase
-function checkMovePawn(piece, newCase){
+//Renvoie un tableau de positions possibles pour la pièce qui se trouve en x y
+function getPossiblePositions(x, y, plateau){
+    //Si la pièce qu l'on veut bouger n'existe pas ou n'est pas de la couleur de la personne qui joue, on renvoie false
+    var piece = findPieceByPosition(x, y, plateau);
+    if(piece === null)
+        return [];
+    //On obtient le tableau de position des déplacements possibles pour la pièce
+    var pos = [];
+    if(piece.type === "t")
+        pos = getPossiblePositionsTower(piece, plateau);
+    else if(piece.type === "p")
+        pos = getPossiblePositionsPawn(piece, plateau);
+    else if(piece.type === "c")
+        pos = getPossiblePositionsCav(piece, plateau);
+    else if(piece.type === "f")
+        pos = getPossiblePositionsFou(piece, plateau);
+    else if(piece.type === "q")
+        pos = getPossiblePositionsQueen(piece, plateau);
+    else if(piece.type === "k")
+        pos = getPossiblePositionsKing(piece, plateau);
+    return pos;
+}
+
+//Renvoie lss positions possibles pour le déplacement d'un pion
+function getPossiblePositionsPawn(piece, plateau){
     //Ces variables seront sous la forme "H8"
     var pos = [];
     var avancer = 1; //Par défaut, noir donc 1pour avancer, on fait +1 sur y
@@ -131,22 +153,22 @@ function checkMovePawn(piece, newCase){
     //On vérifie que la ligne avant existe
     if(validCase(piece.x, String.fromCharCode(piece.y.charCodeAt(0)+avancer))){
         //On vérifie si une pièce se trouve en face du pion
-        var tmp = findPieceByPosition(piece.x, String.fromCharCode(piece.y.charCodeAt(0)+avancer));
+        var tmp = findPieceByPosition(piece.x, String.fromCharCode(piece.y.charCodeAt(0)+avancer), plateau);
         //Si la case est vide, on peut avancer
         if(tmp === null){
             pos.push(String.fromCharCode(piece.y.charCodeAt(0)+avancer) + piece.x);
             //De plus, si on est sur la case de départ, on peut avancer de deux cases
-            tmp = findPieceByPosition(piece.x, String.fromCharCode(piece.y.charCodeAt(0)+avancer*2));
+            tmp = findPieceByPosition(piece.x, String.fromCharCode(piece.y.charCodeAt(0)+avancer*2), plateau);
             if(piece.y === pawnline && tmp === null){
                 pos.push(String.fromCharCode(piece.y.charCodeAt(0)+avancer*2) + piece.x);
             }
         }
         //On vérifie qu'on ne peut pas prendre latéralement
-        tmp = findPieceByPosition((piece.x*1+1), String.fromCharCode(piece.y.charCodeAt(0)+avancer));
+        tmp = findPieceByPosition((piece.x*1+1), String.fromCharCode(piece.y.charCodeAt(0)+avancer), plateau);
         if(tmp !== null && tmp.color === enemy){
             pos.push(String.fromCharCode(piece.y.charCodeAt(0)+avancer) + (piece.x*1+1));
         }
-        tmp = findPieceByPosition(piece.x-1, String.fromCharCode(piece.y.charCodeAt(0)+avancer));
+        tmp = findPieceByPosition(piece.x-1, String.fromCharCode(piece.y.charCodeAt(0)+avancer), plateau);
         if(tmp !== null && tmp.color === enemy){
             pos.push(String.fromCharCode(piece.y.charCodeAt(0)+avancer) + (piece.x-1));
         }
@@ -154,8 +176,8 @@ function checkMovePawn(piece, newCase){
     return pos;
 }
 
-//Vérifie si la tour en question peut se déplacer sur la newCase
-function checkMoveTower(piece, newCase){
+//Renvoie lss positions possibles pour le déplacement d'une tour
+function getPossiblePositionsTower(piece, plateau){
     var pos = [];
     var dirx = [0, 1, 0, -1];
     var diry = [1, 0, -1, 0];
@@ -166,7 +188,7 @@ function checkMoveTower(piece, newCase){
         var continu = true;
         var tmpPiece = null;
         while(continu && validCase(piece.x*1 + dirx[i]*j, String.fromCharCode(piece.y.charCodeAt(0) + diry[i]*j))){
-            tmpPiece = findPieceByPosition(piece.x*1 + dirx[i]*j, String.fromCharCode(piece.y.charCodeAt(0)+ diry[i]*j));
+            tmpPiece = findPieceByPosition(piece.x*1 + dirx[i]*j, String.fromCharCode(piece.y.charCodeAt(0)+ diry[i]*j), plateau);
             if(tmpPiece === null){
                 pos.push(String.fromCharCode(piece.y.charCodeAt(0) + diry[i]*j) + (piece.x*1 + dirx[i]*j));
             } else {
@@ -180,8 +202,8 @@ function checkMoveTower(piece, newCase){
     return pos;
 }
 
-//Vérifie si le cavalier en question peut se déplacer sur la newCase
-function checkMoveCav(piece, newCase){
+//Renvoie lss positions possibles pour le déplacement d'un cavalier
+function getPossiblePositionsCav(piece, plateau){
     var pos = [];
     var dirx = [2, 2, -2, -2, 1, 1, -1, -1];
     var diry = [1, -1, -1, 1, 2, -2, -2, 2];
@@ -189,7 +211,7 @@ function checkMoveCav(piece, newCase){
     var enemy = getEnemy(piece);
     for(var i = 0; i < 8; i++){
         if(validCase(piece.x*1 + dirx[i], String.fromCharCode(piece.y.charCodeAt(0) + diry[i]))){
-            tmpPiece = findPieceByPosition(piece.x*1 + dirx[i], String.fromCharCode(piece.y.charCodeAt(0)+ diry[i]));
+            tmpPiece = findPieceByPosition(piece.x*1 + dirx[i], String.fromCharCode(piece.y.charCodeAt(0)+ diry[i]), plateau);
             if(tmpPiece === null || tmpPiece.color === enemy)
                 pos.push(String.fromCharCode(piece.y.charCodeAt(0) + diry[i]) + (piece.x*1 + dirx[i]))
         }
@@ -197,8 +219,8 @@ function checkMoveCav(piece, newCase){
     return pos;
 }
 
-//Vérifie si le fou en question peut se déplacer sur la newCase
-function checkMoveFou(piece, newCase){
+//Renvoie lss positions possibles pour le déplacement d'un fou
+function getPossiblePositionsFou(piece, plateau){
     var pos = [];
     var dirx = [1, 1, -1, -1];
     var diry = [1, -1, -1, 1];
@@ -209,7 +231,7 @@ function checkMoveFou(piece, newCase){
         var continu = true;
         var tmpPiece = null;
         while(continu && validCase(piece.x*1 + dirx[i]*j, String.fromCharCode(piece.y.charCodeAt(0) + diry[i]*j))){
-            tmpPiece = findPieceByPosition(piece.x*1 + dirx[i]*j, String.fromCharCode(piece.y.charCodeAt(0)+ diry[i]*j));
+            tmpPiece = findPieceByPosition(piece.x*1 + dirx[i]*j, String.fromCharCode(piece.y.charCodeAt(0)+ diry[i]*j), plateau);
             if(tmpPiece === null){
                 pos.push(String.fromCharCode(piece.y.charCodeAt(0) + diry[i]*j) + (piece.x*1 + dirx[i]*j));
             } else {
@@ -223,13 +245,13 @@ function checkMoveFou(piece, newCase){
     return pos;
 }
 
-//Vérifie si la reine en question peut se déplacer sur la newCase
-function checkMoveQueen(piece, newCase){
-    return checkMoveFou(piece, newCase).concat(checkMoveTower(piece, newCase));
+//Renvoie lss positions possibles pour le déplacement d'une reine
+function getPossiblePositionsQueen(piece, plateau){
+    return getPossiblePositionsFou(piece, plateau).concat(getPossiblePositionsTower(piece, plateau));
 }
 
-//Vérifie si le roi en question peut se déplacer sur la newCase
-function checkMoveKing(piece, newCase){
+//Renvoie lss positions possibles pour le déplacement d'un roi
+function getPossiblePositionsKing(piece, plateau){
     var pos = [];
     var dirx = [1, 1, 1, 0, -1, -1, -1, 0];
     var diry = [1, 0, -1, -1, -1, 0, 1, 1];
@@ -237,7 +259,7 @@ function checkMoveKing(piece, newCase){
     var enemy = getEnemy(piece);
     for(var i = 0; i < 8; i++){
         if(validCase(piece.x*1 + dirx[i], String.fromCharCode(piece.y.charCodeAt(0) + diry[i]))){
-            tmpPiece = findPieceByPosition(piece.x*1 + dirx[i], String.fromCharCode(piece.y.charCodeAt(0)+ diry[i]));
+            tmpPiece = findPieceByPosition(piece.x*1 + dirx[i], String.fromCharCode(piece.y.charCodeAt(0)+ diry[i]), plateau);
             if(tmpPiece === null || tmpPiece.color === enemy)
                 pos.push(String.fromCharCode(piece.y.charCodeAt(0) + diry[i]) + (piece.x*1 + dirx[i]))
         }
@@ -246,9 +268,15 @@ function checkMoveKing(piece, newCase){
 }
 
 //Renvoie, si elle existe, la pièce sur la case dont l'ID est en paramètre, sinon renvoie null
-function findPieceByPosition(x, y){
+function findPieceByPosition(x, y, plateau){
     var piece = null;
     plateau.forEach(function(element){if(element.y==y && element.x==x)piece = element;});
+    return piece;
+}
+
+function findKing(color, plateau){
+    var piece = null;
+    plateau.forEach(function(element){if(element.color === color && element.type === "k")piece = element;});
     return piece;
 }
 
@@ -270,4 +298,150 @@ function eatEnemy(pieceToEat){
     var stack = document.getElementById("stack"+pieceToEat.color);
     stack.appendChild(piece);
     piece.classList.remove("piece");
+    var objPiece = findPieceByPosition(pieceToEat.x, pieceToEat.y, plateau);
+    objPiece.x = 0;
+    objPiece.y = "Z";
+}
+
+function passTurn(){
+    if(turn.color === "n"){
+        turn.color = "b";
+        document.getElementById("whiteTurnDisplay").style.display = "inline";
+        document.getElementById("blackTurnDisplay").style.display = "none";
+    } else {
+        turn.color = "n";
+        turn.nb++;
+        document.getElementById("whiteTurnDisplay").style.display = "none";
+        document.getElementById("blackTurnDisplay").style.display = "inline";
+    }
+    turn.echec = checkGameState(); //On regarde si la situation est particulière
+    if(turn.echec === 4){
+        var dsp;
+        if(turn.color === "n"){
+            dsp = document.getElementById("whiteVictoryDisplay");
+        } else {
+            dsp = document.getElementById("blackVictoryDisplay");
+        }
+        dsp.style.display = "inline";
+    }
+}
+
+//Vérifie si un échec est en cours ou même si un mat est en cours
+function checkGameState(){
+    var echec = 0;
+    var king = findKing(turn.color, plateau);
+    var threats = getThreats(king, plateau);
+    //Si on est au minimum en echec, on vérifie qu'on est pas mat
+    if(threats.length > 0){
+        //On utilise la règle du PIF. Prendre, interposer, fuir.
+        //Peut-ont prendre sans être pris ?
+        var prendre = false;
+        threats.forEach(function(element){
+            if(checkMove(king.x, king.y, element.x, element.y, plateau)){
+                //On copie le plateau pour réaliser la situation voulue
+                var copyBoard = getCopyPlateau();
+                var eaten = element;
+                //On retire le pion que le roi doit manger
+                copyBoard.forEach(function(element){
+                    if(eaten.x === element.x && eaten.y === element.y){
+                        element.x = 0;
+                        element.y = "Z";
+                    }
+                });
+                //Le roi prend sa place
+                copyBoard.forEach(function(element){
+                    if(king.x === element.x && king.y === element.y){
+                        element.x = eaten.x;
+                        element.y = eaten.y;
+                    }
+                });
+                //On teste ensuite s'il existe une menace pour le roi dans cette situation
+                //Si oui, cette situation n'est pas une solution, sinon c'est une situation jouable
+                var threatsAfter = getThreats(element, copyBoard);
+                if(threatsAfter.length === 0)
+                    prendre = true;
+            }
+        });
+        //Si on ne peut pas prendre, peut-on interposer ?
+        if(!prendre){
+            var inter = false;
+            var pos = getPossiblePositions(threats[0].charAt(1), threats[0].charAt(0), plateau);
+            for(var i = 1; i < threats.length; i++){
+                var intersect = [];
+                getPossiblePositions(threats[i].charAt(1), threats[i].charAt(0), plateau).forEach(function(element){
+                    if(pos.incldues(element))
+                        intersect.push(element);
+                });
+                pos = intersect;
+            }
+            plateau.forEach(function(element){
+                if(element.color === turn.color){
+                    var tmp = getPossiblePositions(element.x, element.y, plateau);
+                    for(var i = 0; i < pos.length; i++){
+                        if(tmp.includes(pos[i])){
+                            inter = true;
+                        }
+                    }
+                }
+            });
+            //Si on ne peut interposer, il faut fuir !
+            if(!inter){
+                var fuir = false;
+                getPossiblePositions(king.x, king.y, plateau).forEach(function(element){
+                    var copyBoard = getCopyPlateau();
+                    var copyKing = findKing(turn.color, copyBoard);
+                    copyKing.x = element.charAt(1);
+                    copyKing.y = element.charAt(0);
+                    if(getThreats(copyKing, copyBoard).length === 0)
+                        fuir = true;
+                });
+                if(!fuir){
+                    return 4;
+                } else {
+                    return 3;
+                }
+            } else {
+                return 2; //Quelqu'un doit s'interposer
+            }
+        } else {
+            return 1; //Le roi doit prendre
+        }
+    } else {
+        return 0; //Il ne se passe rien
+    }
+}
+
+//Renvoie la liste des pieces (sous forme de coordonnées) qui peuvent prendre la pièce en paramètre au prochain tour
+function getThreats(piece, plateau){
+    var threats = [];
+    plateau.forEach(function(element){
+        if(element.color != piece.color && checkMove(element.x, element.y, piece.x, piece.y, plateau)){
+            threats.push(element.y+element.x);
+        }
+    });
+    return threats;
+}
+
+function getCopyPlateau(){
+    var copy = [];
+    plateau.forEach(function(element){
+        copy.push(copyPiece(element));
+    });
+    return copy;
+}
+
+//Renvoie true si le déplacement demandé mettra le roi (de la couleur de la piece en oldX oldY) en danger
+function kingWillBeInDanger(oldX, oldY, newX, newY){
+    var copyBoard = getCopyPlateau();
+    var piece = findPieceByPosition(oldX, oldY, copyBoard);
+    var enemyPiece = findPieceByPosition(newX, newY, copyBoard);
+    if(enemyPiece !== null){
+        enemyPiece.x = 0;
+        enemyPiece.y = "Z";
+    }
+    piece.x = newX;
+    piece.y = newY;
+    var king = findKing(piece.color, copyBoard);
+    var threats = getThreats(king, copyBoard);
+    return threats.length > 0;
 }

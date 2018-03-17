@@ -12,3 +12,7 @@ function Piece(color, type, x, y){
     this.x = x;
     this.y = y;
 }
+
+function copyPiece(piece){
+    return new Piece(piece.color, piece.type, piece.x, piece.y);
+}
