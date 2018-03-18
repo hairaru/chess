@@ -5,39 +5,25 @@ var plateau;
 var turn;
 
 function init(){
-    //Initialiser le tableau
-    //Pions
-    plateau = []
-    for(var i = 1; i <= 8; i++){
-        plateau.push(new Piece("b","p", i, "G"));
-        plateau.push(new Piece("n","p", i, "B"));
-    }
-    //Tours
-    plateau.push(new Piece("b","t", 1, "H"));
-    plateau.push(new Piece("n","t", 1, "A"));
-    plateau.push(new Piece("b","t", 8, "H"));
-    plateau.push(new Piece("n","t", 8, "A"));
-    //Cavaliers
-    plateau.push(new Piece("b","c", 2, "H"));
-    plateau.push(new Piece("n","c", 2, "A"));
-    plateau.push(new Piece("b","c", 7, "H"));
-    plateau.push(new Piece("n","c", 7, "A"));
-    //Fous
-    plateau.push(new Piece("b","f", 3, "H"));
-    plateau.push(new Piece("n","f", 3, "A"));
-    plateau.push(new Piece("b","f", 6, "H"));
-    plateau.push(new Piece("n","f", 6, "A"));
-    //Reines
-    plateau.push(new Piece("b","q", 4, "H"));
-    plateau.push(new Piece("n","q", 4, "A"));
-    //Rois
-    plateau.push(new Piece("b","k", 5, "H"));
-    plateau.push(new Piece("n","k", 5, "A"));
-    
+    //Init l'affichage et le plateau
+    initGame();
+    //Init les listeners
+    initListeners();
+}
+
+//Initialise l'affichage et le plateau
+function initGame(){
+    //Initialise le plateau
+    createPlateau();
     //Afficher le plateau
     refreshDisplay();
-    
-    //Ajout des listeners sur les pièces
+    //Initialisation du système de tours
+    turn = new Turn();
+    document.getElementById("whiteTurnDisplay").style.display = "inline";
+}
+
+function initListeners(){
+        //Ajout des listeners sur les pièces
     document.addEventListener("dragstart", function(event){
         if(event.target.classList.contains('piece')){
             var img = new Image();
@@ -77,10 +63,39 @@ function init(){
             unlightCases();
         });
     });
+}
+
+//Créer le plateau avec toutes les pièces initiales
+function createPlateau(){
+    //Initialiser le tableau
+    //Pions
+    plateau = [];
+    for(var i = 1; i <= 8; i++){
+        plateau.push(new Piece("b","p", i, "G"));
+        plateau.push(new Piece("n","p", i, "B"));
+    }
+    //Tours
+    plateau.push(new Piece("b","t", 1, "H"));
+    plateau.push(new Piece("n","t", 1, "A"));
+    plateau.push(new Piece("b","t", 8, "H"));
+    plateau.push(new Piece("n","t", 8, "A"));
+    //Cavaliers
+    plateau.push(new Piece("b","c", 2, "H"));
+    plateau.push(new Piece("n","c", 2, "A"));
+    plateau.push(new Piece("b","c", 7, "H"));
+    plateau.push(new Piece("n","c", 7, "A"));
+    //Fous
+    plateau.push(new Piece("b","f", 3, "H"));
+    plateau.push(new Piece("n","f", 3, "A"));
+    plateau.push(new Piece("b","f", 6, "H"));
+    plateau.push(new Piece("n","f", 6, "A"));
+    //Reines
+    plateau.push(new Piece("b","q", 4, "H"));
+    plateau.push(new Piece("n","q", 4, "A"));
+    //Rois
+    plateau.push(new Piece("b","k", 5, "H"));
+    plateau.push(new Piece("n","k", 5, "A"));
     
-    //Initialisation du système de tours
-    turn = new Turn();
-    document.getElementById("whiteTurnDisplay").style.display = "inline";
 }
 
 //Sert à afficher toutes les pièces sur le plateau
@@ -579,4 +594,18 @@ function unlightThreats(){
     while(light[0]){
         light[0].parentNode.removeChild(light[0]);
     }
+}
+
+//Permet de reset la partie
+function reset(){
+    var fields = document.getElementsByClassName("field");
+    for(var i = 0; i < fields.length; i++){
+        fields[i].innerHTML = "";
+    }
+    document.getElementById("whiteTurnDisplay").style.display = "none";
+    document.getElementById("blackTurnDisplay").style.display = "none";
+    document.getElementById("whiteVictoryDisplay").style.display = "none";
+    document.getElementById("blackVictoryDisplay").style.display = "none";
+    
+    initGame();
 }

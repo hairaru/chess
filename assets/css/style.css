@@ -13,6 +13,29 @@ body, html {
   left: 10px;
 }
 
+.reset{
+    display: inline-block;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    height: 50px;
+    width: 200px;
+    padding: 15px 32px;
+    
+    border: none;
+    border-radius: 3px;
+    background-color: #81878F;
+    
+    color: white;
+    font-size: 16px;
+    text-align: center;
+    z-index: 5;
+}
+
+.reset:hover{
+    background-color:#688BB9;
+}
+
 .bg {
     /* The image used */
     background-image: url("../images/back.jpg");
