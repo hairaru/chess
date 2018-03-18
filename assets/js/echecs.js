@@ -371,6 +371,9 @@ function checkGameState(){
     var echec = 0;
     var king = findKing(turn.color, plateau);
     var threats = getThreats(king, plateau);
+    //Si on ne peut pas bouger, on est directement mat
+    if(noMoveLeft(king.color))
+        return 4;
     //Si on est en échec...
     //On utilise la règle du PIF. Prendre, interposer, fuir.
     if(threats.length === 0)
@@ -503,6 +506,35 @@ function kingWillBeInDanger(oldX, oldY, newX, newY){
     var king = findKing(piece.color, copyBoard);
     var threats = getThreats(king, copyBoard);
     return threats.length > 0;
+}
+
+//Renvoie true si le joueur ne peut plus bouger
+function noMoveLeft(color){
+    var nomoveleft = true;
+    var i = 0;
+    var pos;
+    var copyBoard;
+    var enemy;
+    var copyKing;
+    while(nomoveleft && i < plateau.length){
+        if(plateau[i].color === color){
+            pos = getPossiblePositions(plateau[i].x, plateau[i].y, plateau);
+            var j = 0;
+            while(nomoveleft && j < pos.length){
+                copyBoard = getCopyPlateau();
+                enemy = findPieceByPosition(pos[j].charAt(1), pos[j].charAt(0), copyBoard);
+                if(enemy !== null){
+                    enemy.x = 0; enemy.y = "Z";
+                }
+                copyBoard[i].x = parseInt(pos[j].charAt(1)); copyBoard[i].y = pos[j].charAt(0);
+                copyKing = findKing(color, copyBoard);
+                nomoveleft = getThreats(copyKing, copyBoard).length > 0;
+                j++;
+            }
+        }
+        i++;
+    }
+    return nomoveleft;
 }
 
 //Renvoie true si la piece en paramètre peut être promue
