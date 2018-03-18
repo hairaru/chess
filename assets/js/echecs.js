@@ -303,15 +303,17 @@ function getPossiblePositionsKing(piece, plateau){
         var tower = findPieceByPosition(8, y, plateau);
         var c1 = findPieceByPosition(7, y, plateau);
         var c2 = findPieceByPosition(6, y, plateau);
-        if(tower !== null && c1 ===null && c2 === null && tower.type === "t" && !tower.moved)
-            pos.push(y+7);
+        if(tower !== null && c1 ===null && c2 === null && tower.type === "t" && !tower.moved){
+            pos.push(y+7);   
+        }
         //La tour de gauche a-t-elle bougé et le chemin est-il libre ?
         tower = findPieceByPosition(1, y, plateau);
         c1 = findPieceByPosition(2, y, plateau);
         c2 = findPieceByPosition(3, y, plateau);
         var c3 = findPieceByPosition(4, y, plateau);
-        if(tower !== null && c1 ===null && c2 === null && c3 === null && tower.type === "t" && !tower.moved)
+        if(tower !== null && c1 ===null && c2 === null && c3 === null && tower.type === "t" && !tower.moved){
             pos.push(y+3);
+        }
     }
     return pos;
 }
