@@ -44,7 +44,11 @@ function init(){
             img.src = event.target.src;
             event.dataTransfer.setDragImage(img, 40, 40);
             event.dataTransfer.setData('text/plain', event.target.parentElement.id);
+            lightCases(event.target.parentElement.id);
         }
+    }, false);
+    document.addEventListener("dragend", function(event){
+        unlightCases();
     }, false);
     //Ajout des listeners sur les cases
     var cases = Array.from(document.getElementsByClassName("field"));
@@ -70,6 +74,7 @@ function init(){
             element.style.opacity = 1; 
             var old = event.dataTransfer.getData('text/plain');
             movePiece(old.charAt(1), old.charAt(0), element.id.charAt(1), element.id.charAt(0));
+            unlightCases();
         });
     });
     
@@ -78,10 +83,12 @@ function init(){
     document.getElementById("whiteTurnDisplay").style.display = "inline";
 }
 
+//Sert à afficher toutes les pièces sur le plateau
 function refreshDisplay(){
     plateau.forEach(function(element){displayPiece(element);});
 }
 
+//Sert à initialiser le plateau en ajoutant la pièce demandée
 function displayPiece(piece){
     document.getElementById(piece.y+piece.x).innerHTML = 
         '<img draggable="true" class="piece" src="./assets/images/' + piece.color + piece.type + '.png" id="' + piece.y+piece.x + 'P"></img>';
@@ -91,7 +98,7 @@ function movePiece(oldX, oldY, newX, newY){ //Les ids des cases sont en paramèt
     //On vérifie que ce soit le tour de la bonne personne, que le mouvement est valide et que la case soit vide ou avec un ennemi
     //On vérifie également que personne n'est mat
     var piece = findPieceByPosition(oldX, oldY, plateau);
-    if(turn.echec !== 4 && piece.color === turn.color && checkMove(oldX, oldY, newX, newY, plateau)){
+    if(piece !== null && turn.echec !== 4 && piece.color === turn.color && checkMove(oldX, oldY, newX, newY, plateau)){
         //Si l'ennemi existe, on le mange
         var enemyPiece = findPieceByPosition(newX, newY, plateau);
         if(enemyPiece !== null)
@@ -103,6 +110,27 @@ function movePiece(oldX, oldY, newX, newY){ //Les ids des cases sont en paramèt
         var newPos = document.getElementById(newY+newX);
         pieceImg.id = newY+newX+"P";
         newPos.appendChild(pieceImg);
+        //Y a t il une promotion ?
+        if(checkPromotion(piece)) {
+            var res = "";
+            while(res !== "Q" && res !== "B" && res !== "K" && res !== "T")
+                res = prompt("Quelle pièece voulait vous ? Q(ueen), B(ishop), K(night) ou T(ower) ?", "Q").charAt(0);
+            switch (res){
+                case "B":
+                    piece.type = "f";
+                    break;
+                case "K":
+                    piece.type = "c";
+                    break;
+                case "T":
+                    piece.type = "t";
+                    break;
+                default:
+                    piece.type = "q";
+                    break;
+            }
+            pieceImg.src = "./assets/images/"+piece.color+piece.type+".png";
+        }
         //On passe au tour suivant
         passTurn();
     } else{
@@ -274,6 +302,7 @@ function findPieceByPosition(x, y, plateau){
     return piece;
 }
 
+//Renvoie la piece du roi de la couleur donnée dans un plateau donné
 function findKing(color, plateau){
     var piece = null;
     plateau.forEach(function(element){if(element.color === color && element.type === "k")piece = element;});
@@ -284,6 +313,8 @@ function findKing(color, plateau){
 function validCase(x, y){
     return x >= 1 && x <= 8 && y.toUpperCase().charCodeAt(0)>="A".charCodeAt(0) && y.toUpperCase().charCodeAt(0)<="H".charCodeAt(0);
 }
+
+//Renvoie la couleur ennemie à la pièce en paramètre
 function getEnemy(piece){
     var enemy;
     if(piece.color === "b")
@@ -293,6 +324,8 @@ function getEnemy(piece){
     return enemy;
 }
 
+//Quand un ennemi est mangé, il est envoyé dans une colonne de pion 
+//et sa position est définie à (0,0) afin qu'il soit considéré en dehors du plateau
 function eatEnemy(pieceToEat){
     var piece = document.getElementById(pieceToEat.y + pieceToEat.x + "P");
     var stack = document.getElementById("stack"+pieceToEat.color);
@@ -304,6 +337,7 @@ function eatEnemy(pieceToEat){
 }
 
 function passTurn(){
+    //On notifie les joueurs que le tour change
     if(turn.color === "n"){
         turn.color = "b";
         document.getElementById("whiteTurnDisplay").style.display = "inline";
@@ -314,15 +348,21 @@ function passTurn(){
         document.getElementById("whiteTurnDisplay").style.display = "none";
         document.getElementById("blackTurnDisplay").style.display = "inline";
     }
+    unlightThreats(); //Sert à reset les cases rouges
     turn.echec = checkGameState(); //On regarde si la situation est particulière
-    if(turn.echec === 4){
-        var dsp;
-        if(turn.color === "n"){
-            dsp = document.getElementById("whiteVictoryDisplay");
-        } else {
-            dsp = document.getElementById("blackVictoryDisplay");
+    //Si il y a échec, on illume en rouge le roi et les menaces
+    if(turn.echec > 0){
+        lightThreats();
+        //S'il y a mat, on termine la partie
+        if(turn.echec === 4){
+            var dsp;
+            if(turn.color === "n"){
+                dsp = document.getElementById("whiteVictoryDisplay");
+            } else {
+                dsp = document.getElementById("blackVictoryDisplay");
+            }
+            dsp.style.display = "inline";
         }
-        dsp.style.display = "inline";
     }
 }
 
@@ -331,84 +371,103 @@ function checkGameState(){
     var echec = 0;
     var king = findKing(turn.color, plateau);
     var threats = getThreats(king, plateau);
-    //Si on est au minimum en echec, on vérifie qu'on est pas mat
-    if(threats.length > 0){
-        //On utilise la règle du PIF. Prendre, interposer, fuir.
-        //Peut-ont prendre sans être pris ?
-        var prendre = false;
-        threats.forEach(function(element){
-            if(checkMove(king.x, king.y, element.x, element.y, plateau)){
-                //On copie le plateau pour réaliser la situation voulue
-                var copyBoard = getCopyPlateau();
-                var eaten = element;
-                //On retire le pion que le roi doit manger
-                copyBoard.forEach(function(element){
-                    if(eaten.x === element.x && eaten.y === element.y){
-                        element.x = 0;
-                        element.y = "Z";
-                    }
-                });
-                //Le roi prend sa place
-                copyBoard.forEach(function(element){
-                    if(king.x === element.x && king.y === element.y){
-                        element.x = eaten.x;
-                        element.y = eaten.y;
-                    }
-                });
-                //On teste ensuite s'il existe une menace pour le roi dans cette situation
-                //Si oui, cette situation n'est pas une solution, sinon c'est une situation jouable
-                var threatsAfter = getThreats(element, copyBoard);
-                if(threatsAfter.length === 0)
-                    prendre = true;
-            }
-        });
-        //Si on ne peut pas prendre, peut-on interposer ?
-        if(!prendre){
-            var inter = false;
-            var pos = getPossiblePositions(threats[0].charAt(1), threats[0].charAt(0), plateau);
-            for(var i = 1; i < threats.length; i++){
-                var intersect = [];
-                getPossiblePositions(threats[i].charAt(1), threats[i].charAt(0), plateau).forEach(function(element){
-                    if(pos.incldues(element))
-                        intersect.push(element);
-                });
-                pos = intersect;
-            }
-            plateau.forEach(function(element){
-                if(element.color === turn.color){
-                    var tmp = getPossiblePositions(element.x, element.y, plateau);
-                    for(var i = 0; i < pos.length; i++){
-                        if(tmp.includes(pos[i])){
-                            inter = true;
-                        }
-                    }
+    //Si on est en échec...
+    //On utilise la règle du PIF. Prendre, interposer, fuir.
+    if(threats.length === 0)
+        return 0;
+    else if (canTake(king, threats))
+        return 1;
+    else if (canInter(king, threats))
+        return 2;
+    else if (canFlee(king))
+        return 3;
+    else
+        return 4;
+}
+
+//Sous-fonction de checkGameState qui détermine si le roi peut prendre ou non
+function canTake(king, threats){
+    //Peut-ont prendre sans être pris ?
+    var prendre = false;
+    threats.forEach(function(element){
+        if(checkMove(king.x, king.y, element.x, element.y, plateau)){
+            //On copie le plateau pour réaliser la situation voulue
+            var copyBoard = getCopyPlateau();
+            var eaten = element;
+            //On retire le pion que le roi doit manger
+            copyBoard.forEach(function(element){
+                if(eaten.x === element.x && eaten.y === element.y){
+                    element.x = 0;
+                    element.y = "Z";
                 }
             });
-            //Si on ne peut interposer, il faut fuir !
-            if(!inter){
-                var fuir = false;
-                getPossiblePositions(king.x, king.y, plateau).forEach(function(element){
-                    var copyBoard = getCopyPlateau();
-                    var copyKing = findKing(turn.color, copyBoard);
-                    copyKing.x = element.charAt(1);
-                    copyKing.y = element.charAt(0);
-                    if(getThreats(copyKing, copyBoard).length === 0)
-                        fuir = true;
-                });
-                if(!fuir){
-                    return 4;
-                } else {
-                    return 3;
+            //Le roi prend sa place
+            copyBoard.forEach(function(element){
+                if(king.x === element.x && king.y === element.y){
+                    element.x = eaten.x;
+                    element.y = eaten.y;
                 }
-            } else {
-                return 2; //Quelqu'un doit s'interposer
-            }
-        } else {
-            return 1; //Le roi doit prendre
+            });
+            //On teste ensuite s'il existe une menace pour le roi dans cette situation
+            //Si oui, cette situation n'est pas une solution, sinon c'est une situation jouable
+            var threatsAfter = getThreats(element, copyBoard);
+            if(threatsAfter.length === 0)
+                prendre = true;
         }
-    } else {
-        return 0; //Il ne se passe rien
+    });
+    return prendre;
+}
+
+//Sous-fonction de checkGameState qui détermine si une pièece peut s'interposer entre le roi et les menaces
+function canInter(king, threats){
+    var inter = false;
+    var pos = getPossiblePositions(threats[0].charAt(1), threats[0].charAt(0), plateau);
+    for(var i = 1; i < threats.length; i++){
+        var intersect = [];
+        getPossiblePositions(threats[i].charAt(1), threats[i].charAt(0), plateau).forEach(function(element){
+            if(pos.incldues(element))
+                intersect.push(element);
+        });
+        pos = intersect;
     }
+    plateau.forEach(function(element){
+        if(element.color === king.color){
+            var tmp = getPossiblePositions(element.x, element.y, plateau);
+            for(var i = 0; i < pos.length; i++){
+                if(tmp.includes(pos[i])){
+                    var x = parseInt(pos[i].charAt(1));
+                    var y = pos[i].charAt(0);
+                    var copyBoard = getCopyPlateau();
+                    var pieceEnemy = findPieceByPosition(x, y, copyBoard);
+                    if(pieceEnemy !== null){
+                        pieceEnemy.x = 0;
+                        pieceEnemy.y = "Z";
+                    }
+                    var piece = findPieceByPosition(element.x, element.y, copyBoard);
+                    piece.x = x;
+                    piece.y
+                    var copyKing = findKing(turn.color, copyBoard);
+                    if(getThreats(copyKing, copyBoard).length === 0)
+                        inter = true;
+                }
+            }
+        }
+    });
+    return inter;
+}
+
+//Sous-fonction de checkGameState qui détermine si le roi peut fuir ou non
+function canFlee(king){
+    var fuir = false;
+    getPossiblePositions(king.x, king.y, plateau).forEach(function(element){
+        var copyBoard = getCopyPlateau();
+        var copyKing = findKing(king.color, copyBoard);
+        copyKing.x = element.charAt(1);
+        copyKing.y = element.charAt(0);
+        if(getThreats(copyKing, copyBoard).length === 0)
+            fuir = true;
+    });
+    return fuir;
 }
 
 //Renvoie la liste des pieces (sous forme de coordonnées) qui peuvent prendre la pièce en paramètre au prochain tour
@@ -444,4 +503,48 @@ function kingWillBeInDanger(oldX, oldY, newX, newY){
     var king = findKing(piece.color, copyBoard);
     var threats = getThreats(king, copyBoard);
     return threats.length > 0;
+}
+
+//Renvoie true si la piece en paramètre peut être promue
+function checkPromotion(piece){
+    return piece.type === "p" && 
+            (piece.color === "n" && piece.y === "H" || 
+            piece.color === "b" && piece.y === "A");
+}
+
+//Illumine les cases où les déplacements sont possibles
+function lightCases(id){
+    var piece = findPieceByPosition(id.charAt(1), id.charAt(0), plateau);
+    if(piece.color === turn.color){
+        var pos = getPossiblePositions(id.charAt(1), id.charAt(0), plateau);
+        pos.forEach(function(element){
+        document.getElementById(element).innerHTML +=  "<div class=\"light\"></div>";
+        });
+    }
+}
+
+//Désillumine les cases
+function unlightCases(){
+    var light = document.getElementsByClassName("light");
+    while(light[0]){
+        light[0].parentNode.removeChild(light[0]);
+    }
+}
+
+//Illumine le roi menacé et ses menaces
+function lightThreats(){
+    var king = findKing(turn.color, plateau);
+    document.getElementById(king.y+king.x).innerHTML +=  "<div class=\"redlight\"></div>";
+    var threats = getThreats(king, plateau);
+    threats.forEach(function(element){
+        document.getElementById(element).innerHTML +=  "<div class=\"redlight\"></div>";
+    })
+}
+
+//Désillumine le roi menacé et ses menaces
+function unlightThreats(){
+    var light = document.getElementsByClassName("redlight");
+    while(light[0]){
+        light[0].parentNode.removeChild(light[0]);
+    }
 }
