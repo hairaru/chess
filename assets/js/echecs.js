@@ -56,7 +56,7 @@ function initListeners(){
             }
             element.style.opacity = 1; 
             var old = event.dataTransfer.getData('text/plain');
-            movePiece(old.charAt(1), old.charAt(0), element.id.charAt(1), element.id.charAt(0));
+            movePiece(parseInt(old.charAt(1)), old.charAt(0), parseInt(element.id.charAt(1)), element.id.charAt(0));
             unlightCases();
         });
     });
@@ -68,30 +68,30 @@ function createPlateau(){
     //Pions
     plateau = [];
     for(var i = 1; i <= 8; i++){
-        plateau.push(new Piece("b","p", i, "G"));
-        plateau.push(new Piece("n","p", i, "B"));
+        plateau.push(new Piece("b","p", i, "G"),
+            new Piece("n","p", i, "B"));
     }
     //Tours
-    plateau.push(new Piece("b","t", 1, "H"));
-    plateau.push(new Piece("n","t", 1, "A"));
-    plateau.push(new Piece("b","t", 8, "H"));
-    plateau.push(new Piece("n","t", 8, "A"));
+    plateau.push(new Piece("b","t", 1, "H"),
+        new Piece("n","t", 1, "A"),
+        new Piece("b","t", 8, "H"),
+        new Piece("n","t", 8, "A"));
     //Cavaliers
-    plateau.push(new Piece("b","c", 2, "H"));
-    plateau.push(new Piece("n","c", 2, "A"));
-    plateau.push(new Piece("b","c", 7, "H"));
-    plateau.push(new Piece("n","c", 7, "A"));
+    plateau.push(new Piece("b","c", 2, "H"),
+        new Piece("n","c", 2, "A"),
+        new Piece("b","c", 7, "H"),
+        new Piece("n","c", 7, "A"));
     //Fous
-    plateau.push(new Piece("b","f", 3, "H"));
-    plateau.push(new Piece("n","f", 3, "A"));
-    plateau.push(new Piece("b","f", 6, "H"));
-    plateau.push(new Piece("n","f", 6, "A"));
+    plateau.push(new Piece("b","f", 3, "H"),
+        new Piece("n","f", 3, "A"),
+        new Piece("b","f", 6, "H"),
+        new Piece("n","f", 6, "A"));
     //Reines
-    plateau.push(new Piece("b","q", 4, "H"));
-    plateau.push(new Piece("n","q", 4, "A"));
+    plateau.push(new Piece("b","q", 4, "H"),
+        new Piece("n","q", 4, "A"));
     //Rois
-    plateau.push(new Piece("b","k", 5, "H"));
-    plateau.push(new Piece("n","k", 5, "A"));
+    plateau.push(new Piece("b","k", 5, "H"),
+        new Piece("n","k", 5, "A"));
     
 }
 
@@ -111,42 +111,23 @@ function movePiece(oldX, oldY, newX, newY){ //Les ids des cases sont en paramèt
     //On vérifie également que personne n'est mat
     var piece = findPieceByPosition(oldX, oldY, plateau);
     if(piece !== null && turn.echec !== 4 && piece.color === turn.color && checkMove(oldX, oldY, newX, newY, plateau)){
-        //Si l'ennemi existe, on le mange
-        var enemyPiece = findPieceByPosition(newX, newY, plateau);
-        if(enemyPiece !== null)
-            eatEnemy(enemyPiece);
-        //On modifie l'objet piece
-        piece.x = parseInt(newX); piece.y = newY;
-        //On déplace l'image
-        var pieceImg = document.getElementById(oldY+oldX+"P");
-        var newPos = document.getElementById(newY+newX);
-        pieceImg.id = newY+newX+"P";
-        newPos.appendChild(pieceImg);
-        //Y a t il une promotion ?
-        if(checkPromotion(piece)) {
-            var res = "";
-            while(res !== "Q" && res !== "B" && res !== "K" && res !== "T")
-                res = prompt("Quelle pièece voulait vous ? Q(ueen), B(ishop), K(night) ou T(ower) ?", "Q").charAt(0);
-            switch (res){
-                case "B":
-                    piece.type = "f";
-                    break;
-                case "K":
-                    piece.type = "c";
-                    break;
-                case "T":
-                    piece.type = "t";
-                    break;
-                default:
-                    piece.type = "q";
-                    break;
-            }
-            pieceImg.src = "./assets/images/"+piece.color+piece.type+".png";
+        //Si c'est un roque, on déplace la tour avant tout. (Le roque est vérifié dans checkMove->getPossiblePositions->getPossiblePositionsKing)
+        if(piece.type === "k" && !piece.moved && (newX === 3 || newX === 7)){
+            moveTowerForRoque(piece, newX);
         }
+        //Si l'ennemi existe, on le mange, à part si on fait un roque
+        var otherPiece = findPieceByPosition(newX, newY, plateau);
+        if(otherPiece !== null)
+            eatEnemy(otherPiece);
+        //On modifie l'objet piece
+        piece.x = newX; piece.y = newY;
+        //On déplace l'image
+        moveImg(oldX, oldY, newX, newY);
+        //Y a t il une promotion ?
+        promote(piece);
         //On passe au tour suivant
         passTurn();
-    } else{
-        //Some error code
+        piece.moved = true;
     }
 }
 
@@ -154,6 +135,14 @@ function movePiece(oldX, oldY, newX, newY){ //Les ids des cases sont en paramèt
 function checkMove(oldX, oldY, newX, newY, plateau){
     var pos = getPossiblePositions(oldX, oldY, plateau);
     return pos.includes(newY+newX) && !kingWillBeInDanger(oldX, oldY, newX, newY);
+}
+
+//Permet de déplacer l'image d'une pièce d'une case Old à une case New
+function moveImg(oldX, oldY, newX, newY){
+    var pieceImg = document.getElementById(oldY+oldX+"P");
+    var newPos = document.getElementById(newY+newX);
+    pieceImg.id = newY+newX+"P";
+    newPos.appendChild(pieceImg);
 }
 
 //Renvoie un tableau de positions possibles pour la pièce qui se trouve en x y
@@ -304,6 +293,26 @@ function getPossiblePositionsKing(piece, plateau){
                 pos.push(String.fromCharCode(piece.y.charCodeAt(0) + diry[i]) + (piece.x*1 + dirx[i]))
         }
     }
+    //Prenons en compte le roque
+    var y = "H"; //Blanc par défaut
+    if(piece.color === "n")
+        y = "A";
+    //Le roi a-t-il bougé ?
+    if(piece.color === "n" && !piece.moved || piece.color === "b" && !piece.moved){
+        //La tour de droite a-t-elle bougé et le chemin est-il libre ?
+        var tower = findPieceByPosition(8, y, plateau);
+        var c1 = findPieceByPosition(7, y, plateau);
+        var c2 = findPieceByPosition(6, y, plateau);
+        if(tower !== null && c1 ===null && c2 === null && tower.type === "t" && !tower.moved)
+            pos.push(y+7);
+        //La tour de gauche a-t-elle bougé et le chemin est-il libre ?
+        tower = findPieceByPosition(1, y, plateau);
+        c1 = findPieceByPosition(2, y, plateau);
+        c2 = findPieceByPosition(3, y, plateau);
+        var c3 = findPieceByPosition(4, y, plateau);
+        if(tower !== null && c1 ===null && c2 === null && c3 === null && tower.type === "t" && !tower.moved)
+            pos.push(y+3);
+    }
     return pos;
 }
 
@@ -346,6 +355,26 @@ function eatEnemy(pieceToEat){
     var objPiece = findPieceByPosition(pieceToEat.x, pieceToEat.y, plateau);
     objPiece.x = 0;
     objPiece.y = "Z";
+}
+
+//Nécessite les prérequis d'un roque. Bouge la tour pour laisser le roi faire un roque
+function moveTowerForRoque(piece, kingX){
+    var tower;
+    //On obtient y de la ligne
+    var y = "H"; //Blanc par défaut
+    if(piece.color === "n")
+        y = "A";
+    //On obtient le x de la tour
+    var x = 8;
+    if(kingX === 3)
+        x = 1;
+    //On cherche la tour
+    tower = findPieceByPosition(x, y, plateau);
+    var newX = 6; //On fait le petit roque par défaut
+    if(tower.x === 1)
+        newX = 4; //Le grand roque
+    moveImg(tower.x, tower.y, newX, y);
+    tower.x = newX;
 }
 
 function passTurn(){
@@ -554,6 +583,29 @@ function checkPromotion(piece){
     return piece.type === "p" && 
             (piece.color === "n" && piece.y === "H" || 
             piece.color === "b" && piece.y === "A");
+}
+
+function promote(piece){
+    if(checkPromotion(piece)) {
+        var res = "";
+        while(res !== "Q" && res !== "B" && res !== "K" && res !== "T")
+            res = prompt("Quelle pièece voulait vous ? Q(ueen), B(ishop), K(night) ou T(ower) ?", "Q").charAt(0);
+        switch (res){
+            case "B":
+                piece.type = "f";
+                break;
+            case "K":
+                piece.type = "c";
+                break;
+            case "T":
+                piece.type = "t";
+                break;
+            default:
+                piece.type = "q";
+                break;
+        }
+        pieceImg.src = "./assets/images/"+piece.color+piece.type+".png";
+    }
 }
 
 //Illumine les cases où les déplacements sont possibles

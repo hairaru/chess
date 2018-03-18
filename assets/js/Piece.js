@@ -6,6 +6,7 @@ function Piece(color, type, x, y){
     this.type = type;
     this.x = x;
     this.y = y;
+    this.moved = false;
 }
 
 function copyPiece(piece){
