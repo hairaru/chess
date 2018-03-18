@@ -1,6 +1,3 @@
-/* 
-
- */
 var plateau;
 var turn;
 
