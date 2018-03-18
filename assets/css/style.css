@@ -3,6 +3,16 @@ body, html {
     margin: 0;
 }
 
+.text{
+  text-align: center;
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  color: white;
+  left: 10px;
+}
+
 .bg {
     /* The image used */
     background-image: url("../images/back.jpg");
@@ -60,12 +70,6 @@ body, html {
     border: 3px solid #797979;
 }
 
-.text {
-  color: white;
-  position: fixed;
-  top: 10px;
-  left: 10px;
-}
 
 .eatenColl, .eatenColr{
     position: fixed;
