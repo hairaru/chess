@@ -1,8 +1,3 @@
-/* 
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 //color désigne la couleur qui doit jouer actuellement
 //nb désigne le nombre de tours. Il s'incrément à chaque fois que le joueur blanc doit jouer
 function Turn(){
