@@ -168,7 +168,7 @@ function getPossiblePositions(x, y, plateau){
     return pos;
 }
 
-//Renvoie lss positions possibles pour le déplacement d'un pion
+//Renvoie les positions possibles pour le déplacement d'un pion
 function getPossiblePositionsPawn(piece, plateau){
     //Ces variables seront sous la forme "H8"
     var pos = [];
@@ -205,7 +205,7 @@ function getPossiblePositionsPawn(piece, plateau){
     return pos;
 }
 
-//Renvoie lss positions possibles pour le déplacement d'une tour
+//Renvoie les positions possibles pour le déplacement d'une tour
 function getPossiblePositionsTower(piece, plateau){
     var pos = [];
     var dirx = [0, 1, 0, -1];
@@ -231,7 +231,7 @@ function getPossiblePositionsTower(piece, plateau){
     return pos;
 }
 
-//Renvoie lss positions possibles pour le déplacement d'un cavalier
+//Renvoie les positions possibles pour le déplacement d'un cavalier
 function getPossiblePositionsCav(piece, plateau){
     var pos = [];
     var dirx = [2, 2, -2, -2, 1, 1, -1, -1];
@@ -248,7 +248,7 @@ function getPossiblePositionsCav(piece, plateau){
     return pos;
 }
 
-//Renvoie lss positions possibles pour le déplacement d'un fou
+//Renvoie les positions possibles pour le déplacement d'un fou
 function getPossiblePositionsFou(piece, plateau){
     var pos = [];
     var dirx = [1, 1, -1, -1];
@@ -274,12 +274,12 @@ function getPossiblePositionsFou(piece, plateau){
     return pos;
 }
 
-//Renvoie lss positions possibles pour le déplacement d'une reine
+//Renvoie les positions possibles pour le déplacement d'une reine
 function getPossiblePositionsQueen(piece, plateau){
     return getPossiblePositionsFou(piece, plateau).concat(getPossiblePositionsTower(piece, plateau));
 }
 
-//Renvoie lss positions possibles pour le déplacement d'un roi
+//Renvoie les positions possibles pour le déplacement d'un roi
 function getPossiblePositionsKing(piece, plateau){
     var pos = [];
     var dirx = [1, 1, 1, 0, -1, -1, -1, 0];
