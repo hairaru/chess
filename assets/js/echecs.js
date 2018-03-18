@@ -304,7 +304,7 @@ function getPossiblePositionsKing(piece, plateau){
         var c1 = findPieceByPosition(7, y, plateau);
         var c2 = findPieceByPosition(6, y, plateau);
         if(tower !== null && c1 ===null && c2 === null && tower.type === "t" && !tower.moved){
-            pos.push(y+7);   
+            pos.push(y+7);
         }
         //La tour de gauche a-t-elle bougé et le chemin est-il libre ?
         tower = findPieceByPosition(1, y, plateau);
@@ -491,7 +491,7 @@ function canInter(king, threats){
                     }
                     var piece = findPieceByPosition(element.x, element.y, copyBoard);
                     piece.x = x;
-                    piece.y
+                    piece.y = y;
                     var copyKing = findKing(turn.color, copyBoard);
                     if(getThreats(copyKing, copyBoard).length === 0)
                         inter = true;
@@ -520,7 +520,7 @@ function canFlee(king){
 function getThreats(piece, plateau){
     var threats = [];
     plateau.forEach(function(element){
-        if(element.color != piece.color && checkMove(element.x, element.y, piece.x, piece.y, plateau)){
+        if(element.color !== piece.color && checkMove(element.x, element.y, piece.x, piece.y, plateau)){
             threats.push(element.y+element.x);
         }
     });
@@ -544,8 +544,9 @@ function kingWillBeInDanger(oldX, oldY, newX, newY){
         enemyPiece.x = 0;
         enemyPiece.y = "Z";
     }
-    piece.x = newX;
+    piece.x = parseInt(newX);
     piece.y = newY;
+    piece.moved = true;
     var king = findKing(piece.color, copyBoard);
     var threats = getThreats(king, copyBoard);
     return threats.length > 0;
